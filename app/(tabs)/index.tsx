@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { describeSeries, formatChange, formatKpi, normalize, sampleSeries, summarize, type Kpi } from "../../lib/analytics";
+import { describeSeries, formatChange, isDecrease, formatKpi, normalize, sampleSeries, summarize, type Kpi } from "../../lib/analytics";
 
 const SERIES = sampleSeries(60);
 const RANGES = [7, 14, 30] as const;
@@ -63,7 +63,7 @@ export default function DashboardScreen() {
 }
 
 function KpiCard({ kpi }: { kpi: Kpi }) {
-  const up = kpi.change === null || kpi.change >= 0;
+  const up = !isDecrease(kpi.change);
   return (
     <View style={styles.kpi} accessible accessibilityLabel={`${kpi.label} ${formatKpi(kpi)}, ${formatChange(kpi.change)} vs previous period`}>
       <Text style={styles.kpiLabel}>{kpi.label}</Text>

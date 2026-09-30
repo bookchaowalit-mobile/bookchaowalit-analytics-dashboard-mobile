@@ -28,10 +28,13 @@ export function summarize(series: DailyMetric[], days: number): Kpi[] {
   if (!Number.isInteger(days) || days <= 0) throw new RangeError("days must be a positive integer");
   const current = series.slice(-days);
   const previous = series.slice(Math.max(0, series.length - 2 * days), Math.max(0, series.length - days));
+  // A shorter previous window (not enough history) would compare e.g. 7 days
+  // against 3 and report a fake surge, so no change is reported then.
+  const comparable = previous.length === days;
   const kpi = (key: "visitors" | "signups" | "revenue", label: string): Kpi => {
     const value = sum(current, key);
     const prev = sum(previous, key);
-    return { key, label, value, previous: prev, change: percentChange(value, prev) };
+    return { key, label, value, previous: prev, change: comparable ? percentChange(value, prev) : null };
   };
   const visitors = kpi("visitors", "Visitors");
   const signups = kpi("signups", "Sign-ups");
@@ -41,14 +44,22 @@ export function summarize(series: DailyMetric[], days: number): Kpi[] {
     visitors,
     signups,
     kpi("revenue", "Revenue"),
-    { key: "conversion", label: "Conversion", value: conv, previous: prevConv, change: percentChange(conv, prevConv) },
+    {
+      key: "conversion",
+      label: "Conversion",
+      value: conv,
+      previous: prevConv,
+      change: comparable ? percentChange(conv, prevConv) : null,
+    },
   ];
 }
 
 /** Scale values to 0..1 for a bar chart (all zeros stay zero). */
 export function normalize(values: number[]): number[] {
-  const max = Math.max(0, ...values);
-  return values.map((v) => (max === 0 ? 0 : Math.max(0, v) / max));
+  // NaN / Infinity would otherwise turn every bar into NaN; treat them as 0.
+  const clean = values.map((v) => (Number.isFinite(v) ? Math.max(0, v) : 0));
+  const max = Math.max(0, ...clean);
+  return clean.map((v) => (max === 0 ? 0 : v / max));
 }
 
 /** Deterministic pseudo-random sample data so the dashboard is reproducible offline. */
@@ -76,10 +87,21 @@ export function formatKpi(kpi: Pick<Kpi, "key" | "value">): string {
   return Math.round(kpi.value).toLocaleString("en-US");
 }
 
+/** Change rounded to the one decimal shown on screen (avoids "-0.0%"). */
+function shownPct(change: number): number {
+  const pct = Number((change * 100).toFixed(1));
+  return pct === 0 ? 0 : pct;
+}
+
 export function formatChange(change: number | null): string {
   if (change === null) return "new";
-  const pct = (change * 100).toFixed(1);
-  return `${change >= 0 ? "+" : ""}${pct}%`;
+  const pct = shownPct(change);
+  return `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%`;
+}
+
+/** Colour a change red only when the displayed value is actually negative. */
+export function isDecrease(change: number | null): boolean {
+  return change !== null && shownPct(change) < 0;
 }
 
 /**

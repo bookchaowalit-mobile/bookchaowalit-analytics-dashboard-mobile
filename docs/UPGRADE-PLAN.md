@@ -49,3 +49,12 @@ Score: 6/10 (unchanged) — a11y and advisory hardening; local persistence dropp
 - Accessibility: the bar chart now reads a real summary to screen readers (`describeSeries`: total, lowest and highest day, tested); range/metric chips get descriptive labels; header darkened to #2F6DB5 and axis text to #666 for WCAG AA contrast with small text; profile links get link roles.
 - Advisories: `overrides.postcss ^8.5.28` clears the high-severity PostCSS advisory in Expo metro-config (minor bump). Remaining `image-size` (metro, bundler-only), `uuid` (via `xcode`) and `decode-uri-component` (via `query-string@7`) need an Expo SDK major upgrade; deliberately not auto-fixed.
 - Verified: typecheck, lint, 10 vitest tests, Android `expo export` bundle.
+
+## Done in this pass (pass 3)
+
+Score: 7.5/10 (was 7/10) — edge-case hunt in `lib/analytics.ts`.
+
+- Bug: with less than two windows of history, `summarize` compared e.g. 7 days against 3 and reported a fake surge; the change is now `null` ("new") unless the previous window is complete.
+- Bug: a tiny decline rendered as "-0.0%" in red; `formatChange` / `isDecrease` now use the rounded value that is shown.
+- Bug: one NaN/Infinity value made every chart bar NaN; `normalize` treats non-finite values as 0.
+- Verified: typecheck, lint, 13 vitest tests, Android `expo export`.

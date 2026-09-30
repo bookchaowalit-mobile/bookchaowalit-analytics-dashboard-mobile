@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatChange, formatKpi, normalize, percentChange, sampleSeries, summarize, type DailyMetric } from "./analytics";
+import { formatChange, formatKpi, isDecrease, normalize, percentChange, sampleSeries, summarize, type DailyMetric } from "./analytics";
 
 const row = (date: string, visitors: number, signups: number, revenue: number): DailyMetric => ({ date, visitors, signups, revenue });
 
@@ -67,5 +67,26 @@ describe("formatting", () => {
     expect(formatChange(0.123)).toBe("+12.3%");
     expect(formatChange(-0.05)).toBe("-5.0%");
     expect(formatChange(null)).toBe("new");
+  });
+});
+
+describe("pass 3 edge cases", () => {
+  it("does not compare a full window against a truncated previous window", () => {
+    const rows = sampleSeries(10);
+    const kpis = summarize(rows, 7);
+    expect(kpis.every((k) => k.change === null)).toBe(true);
+    expect(summarize(sampleSeries(14), 7).every((k) => k.change !== null)).toBe(true);
+  });
+  it("never shows a negative zero change or colours it as a decrease", () => {
+    expect(formatChange(-0.0001)).toBe("0.0%");
+    expect(isDecrease(-0.0001)).toBe(false);
+    expect(formatChange(0)).toBe("0.0%");
+    expect(isDecrease(-0.0006)).toBe(true);
+    expect(formatChange(-0.0006)).toBe("-0.1%");
+    expect(isDecrease(null)).toBe(false);
+  });
+  it("keeps bars finite when a value is NaN or Infinity", () => {
+    expect(normalize([NaN, 5, 10])).toEqual([0, 0.5, 1]);
+    expect(normalize([Infinity, 4])).toEqual([0, 1]);
   });
 });
