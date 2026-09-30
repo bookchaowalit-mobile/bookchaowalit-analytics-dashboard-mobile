@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { formatChange, formatKpi, normalize, sampleSeries, summarize, type Kpi } from "../../lib/analytics";
+import { describeSeries, formatChange, formatKpi, normalize, sampleSeries, summarize, type Kpi } from "../../lib/analytics";
 
 const SERIES = sampleSeries(60);
 const RANGES = [7, 14, 30] as const;
@@ -27,7 +27,7 @@ export default function DashboardScreen() {
 
       <View style={styles.chips}>
         {RANGES.map((r) => (
-          <Chip key={r} label={`${r}d`} active={days === r} onPress={() => setDays(r)} />
+          <Chip key={r} label={`${r}d`} a11yLabel={`Last ${r} days`} active={days === r} onPress={() => setDays(r)} />
         ))}
       </View>
 
@@ -41,13 +41,13 @@ export default function DashboardScreen() {
         <Text style={styles.cardTitle}>Daily trend</Text>
         <View style={styles.chips}>
           {(["visitors", "signups", "revenue"] as const).map((m) => (
-            <Chip key={m} label={m} active={metric === m} onPress={() => setMetric(m)} />
+            <Chip key={m} label={m} a11yLabel={`Show daily ${m}`} active={metric === m} onPress={() => setMetric(m)} />
           ))}
         </View>
         <View
           style={styles.chart}
           accessibilityRole="image"
-          accessibilityLabel={`Bar chart of daily ${metric} for the last ${days} days`}
+          accessibilityLabel={describeSeries(rows, metric)}
         >
           {bars.map((h, i) => (
             <View key={rows[i].date} style={[styles.bar, { height: `${Math.max(2, h * 100)}%` }]} />
@@ -73,12 +73,23 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
   );
 }
 
-function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function Chip({
+  label,
+  a11yLabel,
+  active,
+  onPress,
+}: {
+  label: string;
+  a11yLabel?: string;
+  active: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       onPress={onPress}
       style={[styles.chip, active && styles.chipActive]}
       accessibilityRole="button"
+      accessibilityLabel={a11yLabel ?? label}
       accessibilityState={{ selected: active }}
     >
       <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
@@ -88,7 +99,7 @@ function Chip({ label, active, onPress }: { label: string; active: boolean; onPr
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F5F5F5" },
-  header: { backgroundColor: "#4A90D9", padding: 24, paddingTop: 16 },
+  header: { backgroundColor: "#2F6DB5", padding: 24, paddingTop: 16 },
   title: { fontSize: 24, fontWeight: "bold", color: "#fff", marginBottom: 6 },
   subtitle: { fontSize: 13, color: "rgba(255,255,255,0.9)" },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 16, paddingTop: 12 },
@@ -108,5 +119,6 @@ const styles = StyleSheet.create({
   chart: { height: 140, flexDirection: "row", alignItems: "flex-end", gap: 2, paddingHorizontal: 16, marginTop: 16 },
   bar: { flex: 1, backgroundColor: "#4A90D9", borderTopLeftRadius: 2, borderTopRightRadius: 2 },
   axis: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 16, marginTop: 4 },
-  axisText: { fontSize: 11, color: "#888" },
+  axisText: { fontSize: 11, color: "#666" },
+
 });

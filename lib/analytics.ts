@@ -81,3 +81,21 @@ export function formatChange(change: number | null): string {
   const pct = (change * 100).toFixed(1);
   return `${change >= 0 ? "+" : ""}${pct}%`;
 }
+
+/**
+ * Screen-reader summary of a daily series (the bar chart is purely visual):
+ * total, and the lowest and highest days.
+ */
+export function describeSeries(rows: DailyMetric[], metric: "visitors" | "signups" | "revenue"): string {
+  if (rows.length === 0) return `No ${metric} data.`;
+  let min = rows[0];
+  let max = rows[0];
+  let total = 0;
+  for (const r of rows) {
+    total += r[metric];
+    if (r[metric] < min[metric]) min = r;
+    if (r[metric] > max[metric]) max = r;
+  }
+  const fmt = (v: number) => (metric === "revenue" ? `฿${Math.round(v).toLocaleString("en-US")}` : Math.round(v).toLocaleString("en-US"));
+  return `Daily ${metric} from ${rows[0].date} to ${rows[rows.length - 1].date}: total ${fmt(total)}, lowest ${fmt(min[metric])} on ${min.date}, highest ${fmt(max[metric])} on ${max.date}.`;
+}

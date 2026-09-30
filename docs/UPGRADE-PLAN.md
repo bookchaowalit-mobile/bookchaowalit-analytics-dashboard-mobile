@@ -12,8 +12,6 @@
 ## Backlog
 
 ### P0
-- Persist user data locally (AsyncStorage via `npx expo install
-  @react-native-async-storage/async-storage`) where the feature holds state.
 - Add real app icons (`assets/icon.png`, `assets/adaptive-icon.png`) and
   reference them from `app.json` before any store build.
 
@@ -24,6 +22,7 @@
   hard-coded light).
 
 ### P2
+- Persist the selected range/metric once real (API) data exists.
 - Sync with the web frontend's API once one exists.
 - Upgrade Expo SDK (clears remaining `npm audit` findings in Expo tooling).
 
@@ -42,3 +41,11 @@
 - `app.json`: removed references to missing icon files; Android package id
   no longer contains hyphens (invalid for Android application IDs).
 - Removed the placeholder Explore tab.
+
+## Done in this pass (pass 2)
+
+Score: 6/10 (unchanged) — a11y and advisory hardening; local persistence dropped from P0: the app shows sample data only and holds no user-created data (range/metric are view state).
+
+- Accessibility: the bar chart now reads a real summary to screen readers (`describeSeries`: total, lowest and highest day, tested); range/metric chips get descriptive labels; header darkened to #2F6DB5 and axis text to #666 for WCAG AA contrast with small text; profile links get link roles.
+- Advisories: `overrides.postcss ^8.5.28` clears the high-severity PostCSS advisory in Expo metro-config (minor bump). Remaining `image-size` (metro, bundler-only), `uuid` (via `xcode`) and `decode-uri-component` (via `query-string@7`) need an Expo SDK major upgrade; deliberately not auto-fixed.
+- Verified: typecheck, lint, 10 vitest tests, Android `expo export` bundle.
